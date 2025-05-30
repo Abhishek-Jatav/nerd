@@ -7,7 +7,7 @@ import {
   uploadBytes,
   getDownloadURL,
 } from "firebase/storage";
-import { auth, database, storage } from "../../lib/firebase"; // ✅ Corrected path
+import { database, storage } from "../../lib/firebase"; // Removed 'auth' import
 
 const AddMaterial = () => {
   const [title, setTitle] = useState("");

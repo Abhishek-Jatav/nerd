@@ -7,12 +7,13 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gray-950 text-white relative px-4 flex items-center justify-center">
       {/* Google Login Icon - Top Right */}
-      <div className="absolute  right-4">
-        <button
-          className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-full shadow-lg transition-all"
+      <div className="absolute right-4">
+        {/* ✅ Replaced <button> with <div> to avoid nested <button> issue */}
+        <div
+          className="bg-gray-800 hover:bg-gray-700 text-white p-2 rounded-full shadow-lg transition-all cursor-pointer"
           title="Login with Google">
           <GoogleLoginButton />
-        </button>
+        </div>
       </div>
 
       {/* Main Content */}

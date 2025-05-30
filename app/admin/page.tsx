@@ -77,9 +77,15 @@ const AdminManagement = () => {
   return (
     <div className="bg-gray-900 text-white min-h-screen px-4 py-6">
       <div className="max-w-xl mx-auto bg-gray-800 p-6 rounded-lg shadow-lg">
-        <h2 className="text-2xl font-bold mb-4 text-center text-white">
+        <h2 className="text-2xl font-bold mb-2 text-center text-white">
           Admin Management
         </h2>
+
+        {currentUser && (
+          <p className="mb-4 text-center text-gray-400">
+            Logged in as: {currentUser.email}
+          </p>
+        )}
 
         <input
           type="email"

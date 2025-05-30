@@ -53,8 +53,21 @@ const Contribute = ({ userUid, userData }: ContributeProps) => {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-    } catch (error: any) {
-      setStatus("Upload failed: " + error.text || error.message);
+    } catch (error: unknown) {
+      // Narrowing error type
+      let errorMessage = "Upload failed.";
+      if (
+        typeof error === "object" &&
+        error !== null &&
+        ("text" in error || "message" in error)
+      ) {
+        if ("text" in error && typeof error.text === "string") {
+          errorMessage = `Upload failed: ${error.text}`;
+        } else if ("message" in error && typeof error.message === "string") {
+          errorMessage = `Upload failed: ${error.message}`;
+        }
+      }
+      setStatus(errorMessage);
     }
   };
 
