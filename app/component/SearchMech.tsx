@@ -1,24 +1,22 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { database } from "../../lib/firebase"; // adjust the path if needed
+import { database } from "../../lib/firebase";
 import { ref, onValue } from "firebase/database";
 
-// Type definition for a material item
 interface Material {
   id: string;
   title: string;
   tags: string[];
   pdfUrl?: string;
-  [key: string]: any; // Allow any other optional properties
+  [key: string]: any;
 }
 
-const SearchMech = () => {
+const SearchMech = ({ authUser }: { authUser: any }) => {
   const [searchTerm, setSearchTerm] = useState<string>("");
   const [allMaterials, setAllMaterials] = useState<Material[]>([]);
   const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([]);
 
-  // Fetch all materials on component mount
   useEffect(() => {
     const materialsRef = ref(database, "materials");
 
@@ -36,20 +34,16 @@ const SearchMech = () => {
           title: val.title || "Untitled",
           tags: Array.isArray(val.tags) ? val.tags : [],
           pdfUrl: val.pdfUrl || "",
-          ...val, // Include any other fields
+          ...val,
         };
       });
 
       setAllMaterials(materials);
     });
 
-    return () => {
-      // Cleanup the Firebase listener when component unmounts
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
-  // Filter materials by tag based on search term
   useEffect(() => {
     const lower = searchTerm.trim().toLowerCase();
 
@@ -62,6 +56,16 @@ const SearchMech = () => {
     setFilteredMaterials(filtered);
   }, [searchTerm, allMaterials]);
 
+  // 🚫 Not logged in
+  if (!authUser) {
+    return (
+      <div className="text-center text-gray-400">
+        Please login to search for resources.
+      </div>
+    );
+  }
+
+  // ✅ Logged in
   return (
     <div className="max-w-2xl mx-auto p-4">
       <input
