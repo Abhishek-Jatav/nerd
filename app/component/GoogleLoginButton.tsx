@@ -1,23 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { signInWithPopup, onAuthStateChanged, signOut } from "firebase/auth";
 import { ref, get } from "firebase/database";
-import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { auth, provider, database } from "@/lib/firebase";
 
 export default function GoogleLoginButton() {
-  const [showMenu, setShowMenu] = useState(false);
-  const [confirmingLogout, setConfirmingLogout] = useState(false);
+  const router = useRouter();
   const [authUser, setAuthUser] = useState<{
     uid: string;
     name: string | null;
     email: string | null;
     avatar: string | null;
   } | null>(null);
-
-  const router = useRouter();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -54,46 +51,30 @@ export default function GoogleLoginButton() {
       if (!snapshot.exists()) {
         const params = new URLSearchParams(authData as Record<string, string>);
         router.push(`/signup?${params}`);
+        // User not found in DB → Logout after short delay
+        setTimeout(() => {
+          signOut(auth).catch((err) => console.error("Logout failed:", err));
+          setAuthUser(null);
+        }, 500);
       }
     } catch (error) {
       console.error("Google Login Error:", error);
     }
   };
 
-  const handleLogout = async () => {
-    try {
-      await signOut(auth);
-      setAuthUser(null);
-    } catch (error) {
-      console.error("Logout failed:", error);
-    }
-  };
-
   const onClickProfile = () => {
-    const user = auth.currentUser;
-    if (user) {
-      router.push(`/profile?uid=${user.uid}`);
-    }
+    router.push("/profile"); // Just route to /profile, use auth context or state inside that page
   };
 
   return (
-    <div className="space-y-4 flex flex-col items-center justify-center h-screen">
+    <div className="h-screen">
       {authUser ? (
-        <div className="p-4 border rounded shadow bg-gray-50 text-gray-900">
+        <div className="text-white flex items-center justify-between space-x-4">
           <p>
-            <strong>Name:</strong> {authUser.name}
+            <strong>{authUser.name}</strong>
           </p>
-
-          {/* Avatar + Dropdown */}
           {authUser.avatar && (
-            <div
-              className="relative inline-block"
-              onMouseEnter={() => setShowMenu(true)}
-              onMouseLeave={() => {
-                setShowMenu(false);
-                setConfirmingLogout(false);
-              }}>
-              {/* Avatar Clickable */}
+            <div className="inline-block">
               <div
                 onClick={onClickProfile}
                 className="cursor-pointer mt-2"
@@ -108,50 +89,6 @@ export default function GoogleLoginButton() {
                   priority
                 />
               </div>
-
-              {/* Dropdown Menu */}
-              {showMenu && (
-                <div className="absolute top-full right-0 mt-2 bg-white border rounded-md shadow-lg z-50 p-2 w-36">
-                  {!confirmingLogout ? (
-                    <>
-                      <div
-                        onClick={onClickProfile}
-                        role="button"
-                        tabIndex={0}
-                        className="cursor-pointer block w-full text-left px-4 py-2 hover:bg-gray-100">
-                        Profile
-                      </div>
-                      <div
-                        onClick={() => setConfirmingLogout(true)}
-                        role="button"
-                        tabIndex={0}
-                        className="cursor-pointer block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-100">
-                        Logout
-                      </div>
-                    </>
-                  ) : (
-                    <div className="px-2 py-1 text-sm">
-                      <p className="mb-1">Confirm logout?</p>
-                      <div className="flex justify-between">
-                        <div
-                          onClick={handleLogout}
-                          role="button"
-                          tabIndex={0}
-                          className="text-green-600 cursor-pointer hover:underline">
-                          Yes
-                        </div>
-                        <div
-                          onClick={() => setConfirmingLogout(false)}
-                          role="button"
-                          tabIndex={0}
-                          className="text-gray-600 cursor-pointer hover:underline">
-                          No
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
             </div>
           )}
         </div>
@@ -159,7 +96,7 @@ export default function GoogleLoginButton() {
         <button
           onClick={handleLogin}
           className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600">
-          Sign in with Google
+          Login
         </button>
       )}
     </div>

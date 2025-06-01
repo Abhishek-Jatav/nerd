@@ -1,13 +1,14 @@
-// app/profile/UserProfilePage.tsx
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
-import { database } from "../../lib/firebase";
 import { ref, get } from "firebase/database";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+
+import { auth, database } from "../../lib/firebase";
 import Contribute from "../component/Contribute";
 import UserContributions from "../component/UserContributions";
-import Image from "next/image";
 
 interface UserProfile {
   uid: string;
@@ -21,25 +22,39 @@ interface UserProfile {
 
 export default function UserProfileClientWrapper() {
   const [userData, setUserData] = useState<UserProfile | null>(null);
-  const searchParams = useSearchParams();
-  const userUid = searchParams.get("uid");
+  const [confirmLogout, setConfirmLogout] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    if (userUid) {
-      const userRef = ref(database, `users/${userUid}`);
-      get(userRef)
-        .then((snapshot) => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        const userRef = ref(database, `users/${user.uid}`);
+        try {
+          const snapshot = await get(userRef);
           if (snapshot.exists()) {
             setUserData(snapshot.val());
           } else {
-            console.log("User not found.");
+            console.log("User not found in database.");
           }
-        })
-        .catch((error) => {
-          console.error("Failed to fetch user data:", error);
-        });
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+        }
+      } else {
+        router.push("/"); // redirect if user not logged in
+      }
+    });
+
+    return () => unsubscribe();
+  }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      router.push("/");
+    } catch (error) {
+      console.error("Logout failed:", error);
     }
-  }, [userUid]);
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-gray-200 px-4 py-10">
@@ -56,6 +71,7 @@ export default function UserProfileClientWrapper() {
                   src={userData.avatar}
                   alt="User Avatar"
                   fill
+                  sizes="112px"
                   style={{ objectFit: "cover" }}
                   priority
                 />
@@ -63,6 +79,29 @@ export default function UserProfileClientWrapper() {
               <div className="text-center">
                 <h2 className="text-2xl font-semibold">{userData.name}</h2>
                 <p className="text-gray-400 text-sm">{userData.email}</p>
+              </div>
+
+              <div className="text-center mt-4">
+                {confirmLogout ? (
+                  <div className="space-x-4">
+                    <button
+                      onClick={handleLogout}
+                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition">
+                      Yes, Logout
+                    </button>
+                    <button
+                      onClick={() => setConfirmLogout(false)}
+                      className="px-4 py-2 bg-gray-600 text-white rounded hover:bg-gray-700 transition">
+                      Cancel
+                    </button>
+                  </div>
+                ) : (
+                  <button
+                    onClick={() => setConfirmLogout(true)}
+                    className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600 transition mt-2">
+                    Logout
+                  </button>
+                )}
               </div>
             </div>
 
@@ -85,14 +124,14 @@ export default function UserProfileClientWrapper() {
               <h3 className="text-xl font-semibold mb-4 text-white">
                 📤 Upload Contribution
               </h3>
-              <Contribute userUid={userUid!} userData={userData} />
+              <Contribute userUid={userData.uid} userData={userData} />
             </section>
 
             <section className="mt-10 border-t border-gray-700 pt-6">
               <h3 className="text-xl font-semibold mb-4 text-white">
                 📚 Your Contributions
               </h3>
-              <UserContributions userUid={userUid!} userData={userData} />
+              <UserContributions userUid={userData.uid} userData={userData} />
             </section>
           </div>
         ) : (
