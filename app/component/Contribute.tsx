@@ -23,29 +23,44 @@ const Contribute = ({ userUid, userData }: ContributeProps) => {
   const [description, setDescription] = useState("");
   const [status, setStatus] = useState("");
   const [pdfTitle, setPdfTitle] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false); // 🚀 Added state to track submission
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // ✅ Early return if any field is empty
     if (!pdfLink || !description || !pdfTitle) {
       setStatus("Please fill in all fields.");
       return;
     }
 
+    // ✅ Check environment variables before using
+    const serviceID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
+    const templateID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
+    const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+
+    if (!serviceID || !templateID || !publicKey) {
+      setStatus("Email service not configured properly.");
+      return;
+    }
+
     const templateParams = {
       user_uid: userUid,
-      user_email: userData.email,
-      user_name: userData.name,
+      user_email: userData?.email,
+      user_name: userData?.name,
       material_title: pdfTitle,
       material_description: description,
       material_drive_link: pdfLink,
     };
 
+    setIsSubmitting(true); // ⏳ Disable button during upload
+
     try {
       const result = await emailjs.send(
-        process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID!,
-        process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID!,
+        serviceID,
+        templateID,
         templateParams,
-        process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY!
+        publicKey
       );
 
       console.log(result.text);
@@ -53,21 +68,12 @@ const Contribute = ({ userUid, userData }: ContributeProps) => {
       setTimeout(() => {
         window.location.reload();
       }, 1000);
-    } catch (error: unknown) {
-      // Narrowing error type
-      let errorMessage = "Upload failed.";
-      if (
-        typeof error === "object" &&
-        error !== null &&
-        ("text" in error || "message" in error)
-      ) {
-        if ("text" in error && typeof error.text === "string") {
-          errorMessage = `Upload failed: ${error.text}`;
-        } else if ("message" in error && typeof error.message === "string") {
-          errorMessage = `Upload failed: ${error.message}`;
-        }
-      }
-      setStatus(errorMessage);
+    } catch (error: any) {
+      // ⚠️ Improved error type handling
+      const errorMessage = error?.text || error?.message || "Upload failed.";
+      setStatus(`Upload failed: ${errorMessage}`);
+    } finally {
+      setIsSubmitting(false); // ✅ Always reset submit state
     }
   };
 
@@ -100,8 +106,11 @@ const Contribute = ({ userUid, userData }: ContributeProps) => {
         />
         <button
           type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-          Upload
+          disabled={isSubmitting} // ✅ Disable button during form submission
+          className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
+            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          }`}>
+          {isSubmitting ? "Uploading..." : "Upload"}
         </button>
       </form>
 
