@@ -126,13 +126,13 @@ export default function UserProfileClientWrapper() {
               </h3>
               <Contribute userUid={userData.uid} userData={userData} />
             </section>
-
+{/* 
             <section className="mt-10 border-t border-gray-700 pt-6">
               <h3 className="text-xl font-semibold mb-4 text-white">
                 📚 Your Contributions
               </h3>
               <UserContributions userUid={userData.uid} userData={userData} />
-            </section>
+            </section> */}
           </div>
         ) : (
           <p className="text-center text-gray-400">Loading user data...</p>

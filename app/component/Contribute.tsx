@@ -75,20 +75,20 @@ const ContributeUpload = ({ userUid, userData }: ContributeProps) => {
   };
 
   return (
-    <div className="max-w-md mx-auto mt-10 p-6 rounded-xl shadow-md bg-white text-black">
+    <div className="max-w-md mx-auto mt-10 p-6 rounded-xl shadow-md  text-white">
       <h2 className="text-xl font-bold mb-4">Contribute Material</h2>
       <form onSubmit={handleUpload} className="space-y-4">
         <input
           type="text"
           placeholder="Title"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 border text-white rounded"
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
         />
         <textarea
           placeholder="Description"
-          className="w-full p-2 border rounded"
+          className="w-full p-2 text-white border rounded"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
