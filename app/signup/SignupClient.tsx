@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import { ref, set, get } from "firebase/database";
 import { database } from "@/lib/firebase";
 import Image from "next/image";
@@ -10,29 +10,32 @@ export default function SignupForm() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
-  const uid = searchParams.get("uid");
-  const nameParam = searchParams.get("name");
-  const emailParam = searchParams.get("email");
-  const avatar = searchParams.get("avatar");
-
-  const [name, setName] = useState(nameParam || "");
-  const [email] = useState(emailParam || "");
+  const [uid, setUid] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [avatar, setAvatar] = useState<string | null>(null);
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [collegeName, setCollegeName] = useState("");
   const [contribution] = useState("0");
-  const [alreadyExists, setAlreadyExists] = useState(false);
 
   useEffect(() => {
-    if (uid) {
-      const userRef = ref(database, `users/${uid}`);
-      get(userRef).then((snapshot) => {
-        if (snapshot.exists()) {
-          setAlreadyExists(true);
-        }
-      });
+    const u = searchParams.get("uid");
+    const n = searchParams.get("name");
+    const e = searchParams.get("email");
+    const a = searchParams.get("avatar");
+
+    if (!u) {
+      alert("Missing UID in URL.");
+      router.push("/");
+      return;
     }
-  }, [uid]);
+
+    setUid(u);
+    setName(n || "");
+    setEmail(e || "");
+    setAvatar(a || null);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -42,7 +45,7 @@ export default function SignupForm() {
     const snapshot = await get(userRef);
 
     if (snapshot.exists()) {
-      alert("User already exists. No data was saved.");
+      alert("User already exists. Cannot save again.");
       return;
     }
 
@@ -61,8 +64,8 @@ export default function SignupForm() {
 
       alert("User data saved successfully.");
       router.push("/");
-    } catch (error) {
-      console.error("Error saving user data:", error);
+    } catch (err) {
+      console.error("Error saving user:", err);
       alert("Failed to save user data.");
     }
   };
@@ -84,86 +87,80 @@ export default function SignupForm() {
           </div>
         )}
 
-        {alreadyExists ? (
-          <p className="text-red-400 text-center font-semibold">
-            This user already exists in the database. You cannot sign up again.
-          </p>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div>
-              <label className="block mb-1 text-sm">Name</label>
-              <input
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
-                required
-              />
-            </div>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="block mb-1 text-sm">Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
+              required
+            />
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm">Email</label>
-              <input
-                type="email"
-                value={email}
-                readOnly
-                className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-gray-400"
-              />
-            </div>
+          <div>
+            <label className="block mb-1 text-sm">Email</label>
+            <input
+              type="email"
+              value={email}
+              readOnly
+              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-gray-400"
+            />
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm">Gender</label>
-              <select
-                value={gender}
-                onChange={(e) => setGender(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
-                required>
-                <option value="">Select gender</option>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-              </select>
-            </div>
+          <div>
+            <label className="block mb-1 text-sm">Gender</label>
+            <select
+              value={gender}
+              onChange={(e) => setGender(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
+              required>
+              <option value="">Select gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm">Date of Birth</label>
-              <input
-                type="date"
-                value={dateOfBirth}
-                onChange={(e) => setDateOfBirth(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
-                required
-              />
-            </div>
+          <div>
+            <label className="block mb-1 text-sm">Date of Birth</label>
+            <input
+              type="date"
+              value={dateOfBirth}
+              onChange={(e) => setDateOfBirth(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
+              required
+            />
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm">College Name</label>
-              <input
-                type="text"
-                value={collegeName}
-                onChange={(e) => setCollegeName(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
-                required
-              />
-            </div>
+          <div>
+            <label className="block mb-1 text-sm">College Name</label>
+            <input
+              type="text"
+              value={collegeName}
+              onChange={(e) => setCollegeName(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
+              required
+            />
+          </div>
 
-            <div>
-              <label className="block mb-1 text-sm">Contribution</label>
-              <input
-                type="text"
-                value={contribution}
-                readOnly
-                className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-gray-400"
-              />
-            </div>
+          <div>
+            <label className="block mb-1 text-sm">Contribution</label>
+            <input
+              type="text"
+              value={contribution}
+              readOnly
+              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-gray-400"
+            />
+          </div>
 
-            <button
-              type="submit"
-              className="w-full py-2 bg-blue-600 hover:bg-blue-700 transition-colors rounded-md font-semibold text-white">
-              Submit
-            </button>
-          </form>
-        )}
+          <button
+            type="submit"
+            className="w-full py-2 bg-blue-600 hover:bg-blue-700 transition-colors rounded-md font-semibold text-white">
+            Submit
+          </button>
+        </form>
       </div>
     </div>
   );

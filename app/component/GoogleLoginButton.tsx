@@ -16,19 +16,33 @@ export default function GoogleLoginButton() {
     avatar: string | null;
   } | null>(null);
 
+  const checkAndSetUser = async (user: any) => {
+    const userRef = ref(database, `users/${user.uid}`);
+    const snapshot = await get(userRef);
+
+    const authData = {
+      uid: user.uid,
+      name: user.displayName,
+      email: user.email,
+      avatar: user.photoURL,
+    };
+
+    if (snapshot.exists()) {
+      setAuthUser(authData);
+    } else {
+      const params = new URLSearchParams(authData as Record<string, string>);
+      router.push(`/signup?${params}`);
+      setTimeout(() => {
+        signOut(auth).catch((err) => console.error("Logout failed:", err));
+        setAuthUser(null);
+      }, 500);
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        const authData = {
-          uid: user.uid,
-          name: user.displayName,
-          email: user.email,
-          avatar: user.photoURL,
-        };
-        setAuthUser(authData);
-      }
+      if (user) await checkAndSetUser(user);
     });
-
     return () => unsubscribe();
   }, []);
 
@@ -36,34 +50,14 @@ export default function GoogleLoginButton() {
     try {
       const result = await signInWithPopup(auth, provider);
       const user = result.user;
-
-      const authData = {
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        avatar: user.photoURL,
-      };
-      setAuthUser(authData);
-
-      const userRef = ref(database, `users/${user.uid}`);
-      const snapshot = await get(userRef);
-
-      if (!snapshot.exists()) {
-        const params = new URLSearchParams(authData as Record<string, string>);
-        router.push(`/signup?${params}`);
-        // User not found in DB → Logout after short delay
-        setTimeout(() => {
-          signOut(auth).catch((err) => console.error("Logout failed:", err));
-          setAuthUser(null);
-        }, 500);
-      }
+      await checkAndSetUser(user);
     } catch (error) {
       console.error("Google Login Error:", error);
     }
   };
 
   const onClickProfile = () => {
-    router.push("/profile"); // Just route to /profile, use auth context or state inside that page
+    router.push("/profile");
   };
 
   return (
