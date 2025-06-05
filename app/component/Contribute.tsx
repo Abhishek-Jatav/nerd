@@ -1,7 +1,13 @@
 "use client";
 
-import { useState } from "react";
-import emailjs from "@emailjs/browser";
+import { useState, useRef } from "react";
+import {
+  ref as storageRef,
+  uploadBytes,
+  getDownloadURL,
+} from "firebase/storage";
+import { database, storage } from "@/lib/firebase"; // ✅ adjust path if needed
+import { ref, push, set, serverTimestamp } from "firebase/database";
 
 interface UserProfile {
   uid: string;
@@ -18,105 +24,100 @@ interface ContributeProps {
   userData: UserProfile;
 }
 
-const Contribute = ({ userUid, userData }: ContributeProps) => {
-  const [pdfLink, setPdfLink] = useState("");
+const ContributeUpload = ({ userUid, userData }: ContributeProps) => {
+  const [file, setFile] = useState<File | null>(null);
   const [description, setDescription] = useState("");
+  const [title, setTitle] = useState("");
   const [status, setStatus] = useState("");
-  const [pdfTitle, setPdfTitle] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false); // 🚀 Added state to track submission
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleUpload = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ Early return if any field is empty
-    if (!pdfLink || !description || !pdfTitle) {
-      setStatus("Please fill in all fields.");
+    if (!file || !description || !title) {
+      setStatus("❌ All fields are required.");
       return;
     }
-
-    // ✅ Check environment variables before using
-    const serviceID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-    const templateID = process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_ID;
-    const publicKey = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
-
-    if (!serviceID || !templateID || !publicKey) {
-      setStatus("Email service not configured properly.");
-      return;
-    }
-
-    const templateParams = {
-      user_uid: userUid,
-      user_email: userData?.email,
-      user_name: userData?.name,
-      material_title: pdfTitle,
-      material_description: description,
-      material_drive_link: pdfLink,
-    };
-
-    setIsSubmitting(true); // ⏳ Disable button during upload
 
     try {
-      const result = await emailjs.send(
-        serviceID,
-        templateID,
-        templateParams,
-        publicKey
-      );
+      setIsUploading(true);
 
-      console.log(result.text);
-      setStatus("Upload successfully!");
-      setTimeout(() => {
-        window.location.reload();
-      }, 1000);
-    } catch (error: any) {
-      // ⚠️ Improved error type handling
-      const errorMessage = error?.text || error?.message || "Upload failed.";
-      setStatus(`Upload failed: ${errorMessage}`);
+      // Upload file to Firebase Storage
+      const path = `uploads/${userUid}_${Date.now()}_${file.name}`;
+      const fileRef = storageRef(storage, path);
+      await uploadBytes(fileRef, file);
+      const downloadURL = await getDownloadURL(fileRef);
+
+      // Save initial data to unverified_contributions
+      const uploadRef = push(ref(database, "unverified_contributions"));
+      await set(uploadRef, {
+        title,
+        description,
+        contributorId: userUid,
+        contributorName: userData?.name,
+        fileUrl: downloadURL,
+        type: file.type,
+        timestamp: serverTimestamp(),
+      });
+
+      setStatus("✅ Uploaded successfully!");
+      setFile(null);
+      setTitle("");
+      setDescription("");
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    } catch (error) {
+      console.error("Upload failed:", error);
+      setStatus("⚠️ Upload failed. Try again.");
     } finally {
-      setIsSubmitting(false); // ✅ Always reset submit state
+      setIsUploading(false);
     }
   };
 
   return (
-    <div className="max-w-md mx-auto mt-8 p-4 rounded-xl shadow-md">
-      <h2 className="text-xl font-bold mb-4">Upload PDF Info</h2>
-      <form onSubmit={handleSubmit} className="space-y-4">
+    <div className="max-w-md mx-auto mt-10 p-6 rounded-xl shadow-md bg-white text-black">
+      <h2 className="text-xl font-bold mb-4">Contribute Material</h2>
+      <form onSubmit={handleUpload} className="space-y-4">
         <input
           type="text"
-          placeholder="PDF Title"
-          value={pdfTitle}
-          onChange={(e) => setPdfTitle(e.target.value)}
-          className="w-full border p-2 rounded"
-          required
-        />
-        <input
-          type="url"
-          placeholder="Google Drive PDF Link"
-          value={pdfLink}
-          onChange={(e) => setPdfLink(e.target.value)}
-          className="w-full border p-2 rounded"
+          placeholder="Title"
+          className="w-full p-2 border rounded"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
           required
         />
         <textarea
-          placeholder="PDF Description"
+          placeholder="Description"
+          className="w-full p-2 border rounded"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
-          className="w-full border p-2 rounded"
           required
         />
+        <input
+          type="file"
+          ref={fileInputRef}
+          accept="application/pdf,image/*"
+          onChange={(e) => setFile(e.target.files?.[0] || null)}
+          className="w-full p-2 border rounded"
+          required
+        />
+        {file && (
+          <p className="text-sm text-gray-700">📁 Selected: {file.name}</p>
+        )}
         <button
           type="submit"
-          disabled={isSubmitting} // ✅ Disable button during form submission
-          className={`bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 ${
-            isSubmitting ? "opacity-50 cursor-not-allowed" : ""
+          disabled={isUploading}
+          className={`w-full py-2 px-4 rounded ${
+            isUploading
+              ? "bg-gray-400 cursor-not-allowed"
+              : "bg-blue-600 text-white hover:bg-blue-700"
           }`}>
-          {isSubmitting ? "Uploading..." : "Upload"}
+          {isUploading ? "Uploading..." : "Upload"}
         </button>
+        {status && <p className="text-sm mt-2">{status}</p>}
       </form>
-
-      {status && <p className="mt-4 text-sm text-gray-700">{status}</p>}
     </div>
   );
 };
 
-export default Contribute;
+export default ContributeUpload;

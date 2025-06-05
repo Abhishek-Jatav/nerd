@@ -11,6 +11,8 @@ import ManageUser from "../component/ManageUser";
 import UserList from "../component/UserList";
 import MaterialList from "../component/MaterialList";
 import AdminControlPanel from "../component/AdminControlPanel";
+import AdminReviewPanel from "../component/AdminReviewPanel";
+import VerifiedContributionsEditor from "../component/VerifiedContributionsEditor";
 
 const AdminManagement = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -63,7 +65,9 @@ const AdminManagement = () => {
       <div className="mt-10 space-y-6">
         <section className="bg-gray-800 p-4 rounded shadow">
           <h3 className="text-xl font-semibold mb-2">Material Management</h3>
-          <AddMaterial />
+          {/* <AddMaterial /> */}
+          <AdminReviewPanel />
+          <VerifiedContributionsEditor />
           <ManageMaterial />
           <MaterialList />
         </section>
@@ -71,7 +75,7 @@ const AdminManagement = () => {
         <section className="bg-gray-800 p-4 rounded shadow">
           <h3 className="text-xl font-semibold mb-2">User Management</h3>
           <ManageUser />
-          <UserList />
+          {/* <UserList /> */}
         </section>
       </div>
     </div>
