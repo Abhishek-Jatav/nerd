@@ -87,7 +87,7 @@ export default function GoogleLoginButton() {
         <p className="text-sm text-gray-400">Checking user...</p>
       ) : authUser ? (
         <div
-          className="flex items-center space-x-3 bg-blue-600 text-white px-5 py-3 rounded-full shadow-lg truncate
+          className="flex items-center space-x-3 bg-blue-600 text-white px-3.5 py-2 rounded-full shadow-lg truncate
           max-w-xs sm:max-w-sm md:max-w-md text-sm sm:text-base">
           <p className="font-medium truncate">{authUser.name}</p>
           {authUser.avatar && (

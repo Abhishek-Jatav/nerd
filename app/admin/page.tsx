@@ -19,9 +19,15 @@ const AdminManagement = () => {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
+        const email = user.email || "";
+        console.log("Logged in user:", email); // 🐞 log the email to debug
         setCurrentUser(user);
 
-        if (user.email === "abhidel44@gmail.com") {
+        if (
+          email === "abhidel44@gmail.com" ||
+          email === "abhishekofficial8285@gmail.com"
+        ) {
+          console.log("Super admin recognized!");
           setIsAdmin(true);
           setIsSuperAdmin(true);
           return;
@@ -30,7 +36,7 @@ const AdminManagement = () => {
         const adminRef = ref(database, "admins");
         onValue(adminRef, (snapshot) => {
           const admins = snapshot.val() || {};
-          const key = user.email?.replace(/\./g, "_");
+          const key = email.replace(/\./g, "_");
           if (key && admins[key]) {
             setIsAdmin(true);
           }
@@ -40,6 +46,8 @@ const AdminManagement = () => {
 
     return () => unsubscribe();
   }, []);
+  
+  
 
   if (!isAdmin) {
     return (
