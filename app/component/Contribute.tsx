@@ -59,7 +59,7 @@ const ContributeUpload = ({ userUid, userData }: ContributeProps) => {
         timestamp: serverTimestamp(),
       });
 
-      toast.success("✅ Uploaded successfully!");
+      toast.success("✅ Under Verification!");
 
       setFile(null);
       setTitle("");
