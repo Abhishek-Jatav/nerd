@@ -5,14 +5,11 @@ import { ref, onValue } from "firebase/database";
 import { onAuthStateChanged, User } from "firebase/auth";
 import { auth, database } from "../../lib/firebase";
 
-import AddMaterial from "../component/AddMaterial";
-import ManageMaterial from "../component/ManageMaterial";
+import SearchMaterial from "../component/SearchMaterial";
 import ManageUser from "../component/ManageUser";
-import UserList from "../component/UserList";
 import MaterialList from "../component/MaterialList";
 import AdminControlPanel from "../component/AdminControlPanel";
-import AdminReviewPanel from "../component/AdminReviewPanel";
-import VerifiedContributionsEditor from "../component/VerifiedContributionsEditor";
+import AdminContributionManager from "../component/AdminContributionManager";
 
 const AdminManagement = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -65,10 +62,8 @@ const AdminManagement = () => {
       <div className="mt-10 space-y-6">
         <section className="bg-gray-800 p-4 rounded shadow">
           <h3 className="text-xl font-semibold mb-2">Material Management</h3>
-          {/* <AddMaterial /> */}
-          <AdminReviewPanel />
-          <VerifiedContributionsEditor />
-          <ManageMaterial />
+          <AdminContributionManager/>
+          <SearchMaterial />
           <MaterialList />
         </section>
 

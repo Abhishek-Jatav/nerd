@@ -5,6 +5,7 @@ import { useState, useEffect } from "react";
 import { ref, set, get } from "firebase/database";
 import { database } from "@/lib/firebase";
 import Image from "next/image";
+import toast from "react-hot-toast";
 
 export default function SignupForm() {
   const searchParams = useSearchParams();
@@ -17,6 +18,7 @@ export default function SignupForm() {
   const [gender, setGender] = useState("");
   const [dateOfBirth, setDateOfBirth] = useState("");
   const [collegeName, setCollegeName] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [contribution] = useState("0");
 
   useEffect(() => {
@@ -26,7 +28,7 @@ export default function SignupForm() {
     const a = searchParams.get("avatar");
 
     if (!u) {
-      alert("Missing UID in URL.");
+      toast.error("Missing UID. Redirecting...");
       router.push("/");
       return;
     }
@@ -35,7 +37,7 @@ export default function SignupForm() {
     setName(n || "");
     setEmail(e || "");
     setAvatar(a || null);
-  }, [searchParams]);
+  }, [searchParams, router]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -45,7 +47,7 @@ export default function SignupForm() {
     const snapshot = await get(userRef);
 
     if (snapshot.exists()) {
-      alert("User already exists. Cannot save again.");
+      toast.error("User already exists.");
       return;
     }
 
@@ -58,22 +60,25 @@ export default function SignupForm() {
         gender,
         dateOfBirth,
         collegeName,
+        phoneNumber,
         contribution,
         timestamp: new Date().toISOString(),
       });
 
-      alert("User data saved successfully.");
+      toast.success("Signup successful!");
       router.push("/");
     } catch (err) {
       console.error("Error saving user:", err);
-      alert("Failed to save user data.");
+      toast.error("Failed to save user data.");
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center px-4">
-      <div className="w-full max-w-lg bg-gray-800 rounded-xl shadow-md p-8">
-        <h1 className="text-3xl font-bold mb-6 text-center">Complete Signup</h1>
+    <div className="min-h-screen bg-gray-900 text-white flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-lg bg-gray-800 rounded-xl shadow-md p-6 sm:p-8">
+        <h1 className="text-2xl sm:text-3xl font-bold mb-6 text-center">
+          Complete Signup
+        </h1>
 
         {avatar && (
           <div className="flex justify-center mb-6">
@@ -106,6 +111,18 @@ export default function SignupForm() {
               value={email}
               readOnly
               className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-gray-400"
+            />
+          </div>
+
+          <div>
+            <label className="block mb-1 text-sm">Phone Number</label>
+            <input
+              type="tel"
+              value={phoneNumber}
+              onChange={(e) => setPhoneNumber(e.target.value)}
+              className="w-full px-3 py-2 bg-gray-700 rounded-md border border-gray-600 text-white"
+              placeholder="Enter phone number"
+              required
             />
           </div>
 
